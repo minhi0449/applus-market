@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.aplus.aplusmarket.mapper.product.ProductMapper">
+
+    <!-- INSERT  상품 등록-->
+    <insert id="InsertProduct" parameterType="com.aplus.aplusmarket.entity.Product" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tb_product (title, product_name, content, register_location, register_ip,
+                             created_at, updated_at, reload_at, price, status,  seller_id,
+                             is_negotiable, is_possible_meet_you, category,brand,find_product_id)
+        VALUES (#{title}, #{productName}, #{content}, #{registerLocation}, #{registerIp},
+                NOW(), NOW(), NOW(), #{price}, 'Active', #{sellerId},#{isNegotiable}, #{isPossibleMeetYou}, #{category},#{brand},#{findProductId})
+    </insert>
+
+    <!-- SELECT BY ID 상품 아이디를 통해 상품 상세 정보와 판매자 닉네임을 가지고 옵니다-->
+    <select id="SelectProductById" resultType="com.aplus.aplusmarket.entity.Product">
+        <!-- SELECT * FROM tb_product WHERE id = #{id} -->
+        SELECT p.*, u.nickname,
+               CASE WHEN w.id IS NOT NULL
+                   then true
+                   Else False
+                   End as isWished
+               FROM tb_product AS p
+            LEFT JOIN tb_user u ON p.seller_id = u.id
+            <if test="userId != null ">
+                LEFT JOIN tb_wish_list  w ON (p.id = w.product_id AND w.user_id = #{userId})
+            </if>
+             WHERE p.id = #{id}
+    </select>
+
+    <select id="SelectProductByIdAndSellerId" resultType="com.aplus.aplusmarket.entity.Product">
+        <!-- SELECT * FROM tb_product WHERE id = #{id} -->
+        SELECT p.*
+        from tb_product AS p
+        WHERE p.id = #{id} and p.seller_id =#{userId}
+    </select>
+
+    <select id="SelectProductByIdForModify" parameterType="long" resultType="com.aplus.aplusmarket.entity.Product" >
+        <!-- SELECT * FROM tb_product WHERE id = #{id} -->
+        SELECT
+        p.id , p.title, p.product_name, p.content,
+        p.register_location, p.register_ip, p.created_at, p.updated_at, p.reload_at,
+        p.price, p.status, p.deleted_at, p.seller_id,
+        p.is_negotiable, p.is_possible_meet_you, p.category, p.brand,
+        p.find_product_id, p.buyer_id
+        FROM tb_product AS p
+        WHERE p.id = #{id}
+    </select>
+
+
+    <!--판매중 상품인 상품을 조회하기 -->
+    <select id="selectProductByIdForStatus" parameterType="com.aplus.aplusmarket.dto.product.requests.ProductListRequestDTO" resultType="com.aplus.aplusmarket.entity.ProductResponseCard">
+        SELECT
+        p.id,
+        p.title,
+        p.product_name,
+        p.created_at,
+        p.updated_at,
+        p.reload_at,
+        p.price,
+        p.status,
+        p.seller_id,
+        p.is_negotiable,
+        p.is_possible_meet_you,
+        p.category,
+        p.register_location,
+        p.brand,
+        i.uuid_name
+            FROM tb_product AS p
+            LEFT JOIN tb_product_image AS i
+            ON p.id = i.product_id AND i.sequence = 0
+        where seller_id = #{userId} AND status = #{status}
+        ORDER BY p.created_at asc
+        Limit 10
+    </select>
+
+    <select id="selectProductByIdForCompleted" parameterType="com.aplus.aplusmarket.dto.product.requests.ProductListRequestDTO" resultType="com.aplus.aplusmarket.entity.ProductResponseCard">
+        SELECT
+        p.id,
+        p.title,
+        p.product_name,
+        p.created_at,
+        p.updated_at,
+        p.reload_at,
+        p.price,
+        p.status,
+        p.seller_id,
+        p.buyer_id,
+        p.is_negotiable,
+        p.is_possible_meet_you,
+        p.category,
+        p.register_location,
+        p.brand,
+        i.uuid_name
+        FROM tb_product AS p
+        LEFT JOIN tb_product_image AS i
+        ON p.id = i.product_id AND i.sequence = 0
+        where (seller_id = #{userId} Or buyer_id = #{userId}) AND status = #{status}
+        <if test="lastIndex != null and lastIndex != '' and lastIndex != 0">
+            And p.id &lt; #{lastIndex}
+            --             <![CDATA[ AND p.id < #{lastIndex} ]]>
+        </if>
+        ORDER BY p.created_at asc
+        Limit 10
+    </select>
+
+
+    <!-- SELECT ALL 상품 정보 모두를 가지고 옵니다-->
+    <select id="SelectAllProducts" resultType="com.aplus.aplusmarket.entity.Product">
+            SELECT * FROM tb_product
+    </select>
+
+    <update id="updateReload" parameterType="Long">
+        update tb_product
+        set reload_at = now(), updated_at = now()
+        where id = #{id}
+    </update>
+
+    <update id="updateStatus" parameterType="com.aplus.aplusmarket.dto.product.requests.ProductListRequestDTO">
+        update tb_product
+        set
+        status = #{status},
+        updated_at = now()
+        <if test="status.equals('Deleted')"> , deleted_at = now() </if>
+        where id = #{id}
+    </update>
+
+    <update id="updateHit" >
+        update tb_product
+        set hit = #{hit}
+        where id = #{id}
+    </update>
+
+    <!-- UPDATE -->
+<!--    <update id="UpdateProduct" parameterType="com.aplus.aplusmarket.entity.Product">-->
+<!--        UPDATE tb_product-->
+<!--        SET title = #{title}, product_images = #{productImages}, product_name = #{productName},-->
+<!--            content = #{content}, register_location = #{registerLocation}, register_ip = #{registerIp},-->
+<!--            updated_at = NOW(), reload_at = NOW(), price = #{price}, status = #{status},-->
+<!--            seller_id = #{sellerId}, is_negotiable = #{isNegotiable},-->
+<!--            is_possible_meet_you = #{isPossibleMeetYou}, category = #{category}-->
+<!--        WHERE id = #{id}-->
+<!--    </update>-->
+    <!--업데이트 기능이며 테스트를 거친 코드는 아닙니다.     -->
+    <update id="updateProduct" parameterType="com.aplus.aplusmarket.entity.Product">
+        UPDATE tb_product
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="productName != null">product_name = #{productName},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="registerLocation != null">register_location = #{registerLocation},</if>
+            <if test="registerIp != null">register_ip = #{registerIp},</if>
+            updated_at = NOW(),
+            <if test="reloadAt != null">reload_at = #{reloadAt},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="sellerId != null">seller_id = #{sellerId},</if>
+            <if test="isNegotiable != null">is_negotiable = #{isNegotiable},</if>
+            <if test="isPossibleMeetYou != null">is_possible_meet_you = #{isPossibleMeetYou},</if>
+            <if test="category != null">category = #{category},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+
+
+    <!--상품 페이징 처리해서 가지고 오는 SQL 입니다 이때 첫번재 이미지를 같이 조인해서 가지고 옵니다.    -->
+    <select id="SelectProductsPage" resultType="com.aplus.aplusmarket.entity.ProductResponseCard">
+        SELECT
+            p.id,
+            p.title,
+            p.product_name,
+            p.created_at,
+            p.updated_at,
+            p.reload_at,
+            p.price,
+            p.status,
+            p.seller_id,
+            p.is_negotiable,
+            p.is_possible_meet_you,
+            p.category,
+            img.uuid_name AS product_image
+        FROM tb_product p
+                 LEFT JOIN tb_product_image img
+                           ON p.id = img.product_id AND img.sequence = 0
+        WHERE p.status = 'Active'
+        <if test="keyword != null and keyword != ''">
+            AND (p.title  LIKE CONCAT('%', #{keyword}, '%') OR p.product_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="brand != null and brand != ''">
+            AND (p.brand = #{brand})
+        </if>
+        ORDER BY p.reload_at DESC , p.id DESC
+            LIMIT #{pageSize}
+        OFFSET #{offset}
+    </select>
+
+    <select id="countProductsForState" resultType="Long">
+        SELECT
+            COUNT(p.id)
+        FROM tb_product p
+        WHERE p.status = #{status}
+        <if test="keyword != null and keyword != ''">
+            AND (p.title LIKE CONCAT('%', #{keyword}, '%') OR p.product_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="brand != null and brand != ''">
+            AND (p.brand = #{brand})
+        </if>
+    </select>
+
+    <delete id="deleteProduct">
+        delete from tb_product where id = #{productId}
+    </delete>
+
+
+</mapper>

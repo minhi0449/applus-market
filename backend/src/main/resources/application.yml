@@ -1,0 +1,119 @@
+spring:
+    application:
+        name: Aplusmarket
+    web:
+        resources:
+            static-locations: classpath:/static/
+    jackson:
+        time-zone: Asia/Seoul
+    devtools:
+        livereload:
+            enabled: true
+    datasource:
+        url: jdbc:mysql://13.209.99.26:3306/applusmarket?serverTimezone=Asia/Seoul
+        username: applus
+        password: Qwe1234~!
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        mybatis:
+            mapper-locations: classpath:mapper/**/*.xml  # 매퍼 XML 파일 경로
+            config-location: classpath:mybatis-config.xml  # MyBatis 설정 파일 경로 (선택)
+            type-aliases-package: com.aplus.aplusmarket # TypeAlias 사용할 패키지 경로
+
+    jpa:
+        database: mysql
+        hibernate:
+            ddl-auto: update
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.MySQL8Dialect
+                format_sql: true
+                use_sql_comments: true
+        show-sql: true
+    servlet:
+        multipart:
+            enabled: true
+            location: uploads/
+    kafka:
+        bootstrap-servers: 13.209.99.26:9092
+        consumer:
+            group-id: product-group
+            auto-offset-reset: earliest
+            enable-auto-commit: false
+            key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+            value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+            properties:
+                spring.json.trusted.packages: "*"
+
+        producer:
+            retries: 3
+            acks: all
+            key-serializer: org.apache.kafka.common.serialization.StringSerializer
+            value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+        listener:
+            ack-mode: manual
+            missing-topics-fatal: false
+            concurrency: 3
+            type: batch
+            ack-count: 1
+    data:
+        mongodb:
+            uri: mongodb://root:Qwe1234~!@13.209.99.26:27017/applus?authSource=admin
+        redis:
+            host: 13.209.99.26
+            port: 6379
+            password: Qwe1234~!
+            repositories:
+                enabled: true
+            lettuce:
+                pool:
+                    max-wait: 5000ms
+
+    mail:
+        host: smtp.gmail.com
+        port: 587
+        username: hajhi7899@gmail.com
+        password: kdtl ocrv pjss zpxx
+        properties:
+          mail:
+              smtp:
+                  auth: ture
+                  starttls:
+                      enable: true
+    junit:
+        jupiter:
+            test instance:
+                lifecycle:
+                    default= per_method:
+
+mybatis:
+    mapper-locations: classpath:mapper/**/*.xml  # 매퍼 XML 파일 경로
+    config-location: classpath:mybatis-config.xml  # MyBatis 설정 파일 경로 (선택)
+    type-aliases-package: com.aplus.aplusmarket.entity,  com.aplus.aplusmarket.dto # TypeAlias 사용할 패키지 경로
+server:
+    port:  ${SERVER_PORT:8080}
+    servlet:
+        context-path: /
+    address: 0.0.0.0
+
+logging:
+    level:
+        org.mybatis: DEBUG
+        org.springframework: INFO
+token:
+    jwt:
+        secret: "UexkyuXOpB7ApyOmIXm0zn23EE/ZLlbdRHFIronNyvHb1NoipAZHj2App1HBm8RwCSmHUzzWYRRL61OyAST2TQ=="
+        issuer: "applusmarket"
+
+#2024.02.04 이도영 이미지 파일 경로 추가
+file:
+    upload:
+        path: uploads
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health, info
+    endpoint:
+        health:
+            show-details: always

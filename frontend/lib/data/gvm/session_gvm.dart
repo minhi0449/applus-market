@@ -1,0 +1,387 @@
+import 'dart:io';
+
+import 'package:applus_market/_core/utils/custom_snackbar.dart';
+import 'package:applus_market/_core/utils/dialog_helper.dart';
+import 'package:applus_market/_core/utils/exception_handler.dart';
+import 'package:applus_market/data/gvm/myinfo_event_notifier.dart';
+import 'package:applus_market/data/gvm/notification_state.dart';
+import 'package:applus_market/data/gvm/websocket/websocket_notifier.dart';
+import 'package:applus_market/data/repository/auth/auth_repository.dart';
+import 'package:applus_market/main.dart';
+import 'package:cookie_jar/cookie_jar.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../_core/utils/apiUrl.dart';
+import '../../_core/utils/dio.dart';
+import '../../_core/utils/logger.dart';
+import '../model/auth/login_state.dart';
+import '../model/auth/token_manager.dart';
+import '../model/auth/user.dart';
+import '../model_view/user/my_info_vm.dart';
+
+class SessionGVM extends Notifier<SessionUser> {
+  final mContext = navigatorkey.currentContext!;
+  final AuthRepository authRepository = AuthRepository();
+
+  TokenManager tokenManager = TokenManager();
+  String? _uid;
+  String? _pass;
+
+  @override
+  SessionUser build() {
+    ref.listen(
+      myInfoProvider,
+      (previous, next) {
+        if (next != UserAction.none) {
+          init();
+          ref.read(myInfoEventProvider.notifier).reset();
+        }
+      },
+    );
+
+    return SessionUser(
+      id: null,
+      uid: null,
+      nickname: null,
+      isLoggedIn: false,
+      profileImg: null,
+      accessToken: null,
+    );
+  }
+
+  void init() {
+    state = SessionUser(
+      id: state.id,
+      uid: state.uid,
+      nickname: state.nickname,
+      isLoggedIn: state.isLoggedIn,
+      profileImg: state.profileImg,
+      accessToken: state.accessToken,
+    );
+  }
+
+  void updateProfileImage(String profilePath) {
+    logger.i('프로일 이미지 등록 $profilePath');
+    state = state.copyWith(profileImg: profilePath);
+    logger.i('프로일 이미지 등록 $profilePath');
+  }
+
+  void updateNickname(String nickname) {
+    logger.i('nickName 변경 메소드 시작');
+    state = state.copyWith(nickname: nickname);
+    logger.i('현재 SessionUser : $state');
+  }
+
+  Future<void> initializeAuthState() async {
+    String? accessToken = await tokenManager.getAccessToken();
+    if (accessToken != null) {
+      logger.i("기존 Access Token 발견: $accessToken");
+      bool isDecode = decodeAccessToken(accessToken);
+      if (isDecode) {
+        logger.i("기존 Access Token 으로 셋팅: $state");
+
+        Navigator.popAndPushNamed(mContext, "/home");
+      }
+    }
+    // 2. Access Token이 없으면, Refresh Token을 사용하여 자동 로그인 시도
+    logger.i("Access Token 없음, Refresh Token으로 재로그인 시도...");
+    String? refreshToken = await tokenManager.getRefreshToken();
+    logger.i('refreshToken 존재X $refreshToken');
+    if (refreshToken != null) {
+      logger.d('여기');
+      (Map<String, dynamic>, String?) tuple =
+          await authRepository.refreshAccessToken(refreshToken);
+      Map<String, dynamic> resBody = tuple.$1;
+      String? newAccessToken = tuple.$2;
+
+      if (resBody['code'] != 1219 || newAccessToken == null) {
+        logger.w("❌ 자동 로그인 실패 - 로그인 화면으로 이동");
+        Navigator.pushNamed(mContext, "/login");
+        return;
+      }
+
+      tokenManager.saveAccessToken(newAccessToken);
+      DateTime expiryDate =
+          JwtDecoder.getExpirationDate(newAccessToken); //  만료 시간
+      logger.i(" 토큰 만료 시간: $expiryDate, 현재 시간: ${DateTime.now()}");
+      if (expiryDate.isBefore(DateTime.now())) {
+        return;
+      }
+
+      logger.i(" 자동 로그인 성공");
+
+      Map<String, dynamic> data = resBody['data'];
+      state = state.copyWith(
+        id: data['id'],
+        uid: data['uid'],
+        nickname: data['nickname'],
+        profileImg: data['profileImg'],
+        isLoggedIn: true,
+      );
+      logger.i('업데이트 된 정보@@ ${state.nickname}');
+
+      _setupDioInterceptor(newAccessToken);
+
+      ref.watch(webSocketProvider.notifier).subscribeUser(state.id!);
+      ref.watch(webSocketProvider.notifier).subscribeToNotifications(state.id!);
+      ref.watch(webSocketProvider.notifier).requestPastNotifications(state.id!);
+
+      Navigator.pushNamed(mContext, "/home");
+    } else {
+      logger.w("❌ refreshToken 존재 X  - 로그인 화면으로 이동");
+      Navigator.pushNamed(mContext, "/login");
+    }
+  }
+
+  //로그인
+  void login(
+      GlobalKey<FormState> formKey, String? uid, String? password) async {
+    AuthRepository authRepository = AuthRepository();
+
+    // 로그인 로직
+    //입력필드값 없을때,
+    if (uid == null || password == null) {
+      DialogHelper.showAlertDialog(
+        context: mContext,
+        title: '로그인 실패',
+        content: '아이디 및 비밀번호를 입력해주세요.',
+        onConfirm: () {
+          Navigator.pop(mContext);
+        },
+      );
+      return;
+    } else if (formKey.currentState?.validate() ?? false) {
+      try {
+        _uid = uid;
+        _pass = password;
+        (Map<String, dynamic>, String) response =
+            await authRepository.login(_uid!, _pass!);
+        String accessToken = response.$2;
+        Map<String, dynamic> responseDTO = response.$1;
+
+        if (responseDTO['code'] == 1000) {
+          tokenManager.saveAccessToken(accessToken);
+          List<Cookie> cookies =
+              await cookieJar.loadForRequest(Uri.parse(apiUrl));
+          String? refreshToken = cookies
+              .firstWhere((cookie) => cookie.name == "refreshToken")
+              .value;
+          tokenManager.saveRefreshToken(refreshToken);
+          logger.d('저장된 refreshToken!!! $refreshToken');
+          //state = // 상태 업데이트
+          Map<String, dynamic> data = responseDTO['data'];
+
+          state = state.copyWith(
+            id: data['id'],
+            uid: data['uid'],
+            nickname: data['nickName'],
+            profileImg: data['profileImg'],
+            isLoggedIn: true,
+          );
+
+          _setupDioInterceptor(accessToken);
+          logger.e('사용자 아이디로 구독 시도');
+          ref.watch(webSocketProvider.notifier).subscribeUser(state.id!);
+          ref
+              .watch(webSocketProvider.notifier)
+              .subscribeToNotifications(state.id!);
+          ref
+              .watch(webSocketProvider.notifier)
+              .requestPastNotifications(state.id!);
+
+          logger.e('사용자 아이디로 구독 완료');
+          Navigator.popAndPushNamed(mContext, '/home');
+        } else {
+          ExceptionHandler.handleException(
+              responseDTO['message'], StackTrace.current);
+
+          DialogHelper.showAlertDialog(
+            context: mContext,
+            title: '로그인 실패',
+            content: responseDTO['message'],
+            onConfirm: () {
+              Navigator.pop(mContext);
+            },
+          );
+          return;
+          //_showErrorDialog("로그인 실패", responseDTO['message']);
+        }
+      } catch (e, stackTrace) {
+        logger.e("❌ 로그인 중 오류 발생: $e");
+        ExceptionHandler.handleException('로그인 통신 오류', stackTrace);
+        DialogHelper.showAlertDialog(
+            context: mContext,
+            title: '로그인 실패',
+            content: '통신 에러 ',
+            onConfirm: () {
+              Navigator.pop(mContext);
+            });
+      }
+    }
+  }
+
+  // ✅ 예외 발생 시 UI에 표시할 AlertDialog
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: mContext,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text('확인'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _setupDioInterceptor(String accessToken) {
+    logger.w('dio에 accessToken 넣기 : $accessToken');
+    dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          // 토큰이 있는 경우 헤더에 추가
+          if (state.isLoggedIn) {
+            options.headers['Authorization'] = '${accessToken}';
+          }
+          return handler.next(options); // 다음 단계로 요청 전달
+        },
+      ),
+    );
+  }
+
+  void logout() async {
+    try {
+      await tokenManager.clearToken();
+      logger.d('isLoggedIn 상태 ${state.isLoggedIn}');
+
+      Map<String, dynamic> response = await authRepository.logout();
+
+      // logger.e('! [] ==  이용시 : ${!response['code'] == 1009}'); 런타임 시 여기서 에러
+
+      if (response['code'] != 1217) {
+        _showErrorDialog('로그아웃 API 요청 에러', response['message']);
+        return;
+      }
+
+      resetUser();
+      await tokenManager.clearToken();
+
+      // 쿠키 삭제 - Refresh Token 제거
+      await cookieJar.deleteAll();
+      logger.e('로그아웃 되었습니다.');
+
+      ref.read(notificationProvider.notifier).clearNotifications();
+
+      // 이전 화면 다 파괴
+      Navigator.pushNamedAndRemoveUntil(
+        mContext,
+        '/login',
+        (route) => false,
+      );
+    } catch (e, stackTrace) {
+      logger.e('로그아웃 처리 중 오류 발생 $e, $stackTrace');
+      throw Exception(e);
+    }
+  }
+
+  // 회원가입
+
+  Future<void> join(Map<String, dynamic> body) async {
+    try {
+      Map<String, dynamic> responseBody =
+          await authRepository.apiInsertUser(body);
+      if (responseBody['code'] == 1100) {
+        logger.i('회원가입 성공!');
+        Navigator.popAndPushNamed(mContext, '/home');
+      }
+    } catch (e, stackTrace) {
+      ExceptionHandler.handleException('회원가입 실패', stackTrace);
+    }
+  }
+
+  //sessionUser 초기화 시키기
+  void resetUser() {
+    state = SessionUser(
+      id: null,
+      uid: null,
+      nickname: null,
+      isLoggedIn: false,
+      accessToken: null,
+      profileImg: null,
+    );
+  }
+
+  bool decodeAccessToken(String token) {
+    Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+
+    String uid = decodedToken['sub']; // 유저 ID
+    int? userId = decodedToken['id'] is int
+        ? decodedToken['id']
+        : int.tryParse(decodedToken['id'].toString());
+    String? profileImg = decodedToken['profileImg'];
+    if (uid == null || userId == null) {
+      logger.e("JWT 토큰 파싱 오류: 필수 정보가 없습니다.");
+      return false;
+    }
+
+    DateTime expiryDate = JwtDecoder.getExpirationDate(token); //  만료 시간
+    logger.i(" 토큰 만료 시간: $expiryDate, 현재 시간: ${DateTime.now()}");
+    if (expiryDate.isBefore(DateTime.now())) {
+      return false;
+    }
+
+    logger.i('여기 만료되지않음!!! ${decodedToken} ');
+
+    state = state.copyWith(
+        id: decodedToken['id'],
+        uid: uid,
+        nickname: decodedToken['nickName'],
+        profileImg: profileImg,
+        isLoggedIn: true);
+
+    logger.i('상태 업데이트 완료! $state');
+    return true;
+  }
+
+  //탈퇴하기
+
+  Future<void> withdrawal() async {
+    try {
+      if (state.id == null || state.id == 0) {
+        ExceptionHandler.handleException('회원탈퇴 중 오류 발생', StackTrace.current);
+        return;
+      }
+      Map<String, dynamic> resBody = await authRepository.withdrawal(state.id!);
+      if (resBody['code'] == 'failed') {
+        CustomSnackbar.showSnackBar(resBody['message']);
+        return;
+      }
+
+      DialogHelper.showAlertDialog(
+        context: mContext,
+        title: '탈퇴되었습니다.',
+        onConfirm: () {
+          logout();
+        },
+      );
+    } catch (e, stackTrace) {
+      ExceptionHandler.handleException('회원탈퇴 중 오류 발생', stackTrace);
+      return;
+    }
+  }
+}
+
+final LoginProvider = NotifierProvider<SessionGVM, SessionUser>(
+  () {
+    return SessionGVM();
+  },
+);

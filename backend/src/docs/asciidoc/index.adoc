@@ -1,0 +1,327 @@
+= AplusMarket API 문서
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+
+[[User-API]]
+== User API
+
+'''
+
+
+
+[[User-로그인]]
+=== User 로그인
+실행
+include::{snippets}/auth-controller-test/login/curl-request.adoc[]
+include::{snippets}/auth-controller-test/login/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/login/http-response.adoc[]
+include::{snippets}/auth-controller-test/login/response-body.adoc[]
+
+[[User-refresh]]
+=== User refresh
+실행
+include::{snippets}/auth-controller-test/refresh/curl-request.adoc[]
+include::{snippets}/auth-controller-test/refresh/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/refresh/http-response.adoc[]
+include::{snippets}/auth-controller-test/refresh/response-body.adoc[]
+
+
+[[User-로그아웃]]
+=== User 로그아웃
+실행
+include::{snippets}/auth-controller-test/logout/curl-request.adoc[]
+include::{snippets}/auth-controller-test/logout/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/logout/http-response.adoc[]
+include::{snippets}/auth-controller-test/logout/response-body.adoc[]
+
+[[User-회원가입]]
+=== User 회원가입
+실행
+include::{snippets}/auth-controller-test/register/curl-request.adoc[]
+include::{snippets}/auth-controller-test/register/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/register/http-response.adoc[]
+include::{snippets}/auth-controller-test/register/response-body.adoc[]
+
+[[User-회원탈퇴]]
+=== User 회원탈퇴
+실행
+include::{snippets}/auth-controller-test/update-withdrawal/curl-request.adoc[]
+include::{snippets}/auth-controller-test/update-withdrawal/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/update-withdrawal/http-response.adoc[]
+include::{snippets}/auth-controller-test/update-withdrawal/response-body.adoc[]
+
+
+[[User-회원정보조회]]
+=== User 회원정보조회
+실행
+include::{snippets}/auth-controller-test/get-my-info/curl-request.adoc[]
+include::{snippets}/auth-controller-test/get-my-info/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/get-my-info/http-response.adoc[]
+include::{snippets}/auth-controller-test/get-my-info/response-body.adoc[]
+
+[[User-회원정보수정]]
+=== User 회원 정보 수정
+실행
+include::{snippets}/auth-controller-test/update-user-info/curl-request.adoc[]
+include::{snippets}/auth-controller-test/update-user-info/http-request.adoc[]
+
+결과
+include::{snippets}/auth-controller-test/update-user-info/http-response.adoc[]
+include::{snippets}/auth-controller-test/update-user-info/response-body.adoc[]
+
+[[User-아이디찾기]]
+=== User 아이디찾기 조회
+실행
+include::{snippets}/user-controller-test/find-uid/curl-request.adoc[]
+include::{snippets}/user-controller-test/find-uid/http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/find-uid/http-response.adoc[]
+include::{snippets}/user-controller-test/find-uid/response-body.adoc[]
+
+[[User-비밀번호찾기]]
+=== User 비밀번호찾기 조회
+실행
+include::{snippets}/user-controller-test/find-pass/curl-request.adoc[]
+include::{snippets}/user-controller-test/find-pass/http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/find-pass/http-response.adoc[]
+include::{snippets}/user-controller-test/find-pass/response-body.adoc[]
+
+[[User-비밀번호]]
+=== User 비밀번호 변경
+
+실행
+include::{snippets}/user-controller-test/change-pass/curl-request.adoc[]
+include::{snippets}/user-controller-test/change-pass/http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/change-pass/http-response.adoc[]
+include::{snippets}/user-controller-test/change-pass/response-body.adoc[]
+
+
+[[User-주소등록]]
+=== User 주소등록
+
+실행
+include::{snippets}/user-controller-test/insert-address/curl-request.adoc[]
+include::{snippets}/user-controller-test/insert-address//http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/insert-address//http-response.adoc[]
+include::{snippets}/user-controller-test/insert-address//response-body.adoc[]
+
+
+[[User-주소리스트]]
+=== User 주소리스트
+
+실행
+include::{snippets}/user-controller-test/get-address-list/curl-request.adoc[]
+include::{snippets}/user-controller-test/get-address-list/http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/get-address-list/http-response.adoc[]
+include::{snippets}/user-controller-test/get-address-list/response-body.adoc[]
+
+
+[[User-주소수정]]
+=== User 주소수정
+
+실행
+include::{snippets}/user-controller-test/modify-address/curl-request.adoc[]
+include::{snippets}/user-controller-test/modify-address/http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/modify-address/http-response.adoc[]
+include::{snippets}/user-controller-test/modify-address/response-body.adoc[]
+
+
+
+[[User-주소삭제]]
+=== User 주소삭제
+
+실행
+include::{snippets}/user-controller-test/delete-address/curl-request.adoc[]
+include::{snippets}/user-controller-test/delete-address/http-request.adoc[]
+
+결과
+include::{snippets}/user-controller-test/delete-address/http-response.adoc[]
+include::{snippets}/user-controller-test/delete-address/response-body.adoc[]
+
+
+
+[[Product-API]]
+== Product API
+
+'''
+
+
+[[Product-상품리스트조회]]
+=== Product 상품리스트조회
+
+실행
+include::{snippets}/product-controller-test/get-products/curl-request.adoc[]
+include::{snippets}/product-controller-test/get-products/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/get-products/http-response.adoc[]
+include::{snippets}/product-controller-test/get-products/response-body.adoc[]
+
+
+[[Product-상품등록]]
+=== Product 상품등록
+
+실행
+include::{snippets}/product-controller-test/insert-product/curl-request.adoc[]
+include::{snippets}/product-controller-test/insert-product/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/insert-product/http-response.adoc[]
+include::{snippets}/product-controller-test/insert-product/response-body.adoc[]
+
+
+[[Product-상품수정조회]]
+=== Product 상품수정조회
+
+실행
+include::{snippets}/product-controller-test/get-product-for-modify/curl-request.adoc[]
+include::{snippets}/product-controller-test/get-product-for-modify/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/get-product-for-modify/http-response.adoc[]
+include::{snippets}/product-controller-test/get-product-for-modify/response-body.adoc[]
+
+
+[[Product-상품수정]]
+=== Product 상품수정
+
+실행
+include::{snippets}/product-controller-test/modify-product/curl-request.adoc[]
+include::{snippets}/product-controller-test/modify-product/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/modify-product/http-response.adoc[]
+include::{snippets}/product-controller-test/modify-product/response-body.adoc[]
+
+
+[[Product-상품상세정보]]
+=== Product 상품상세정보
+
+실행
+include::{snippets}/product-controller-test/select-product-by-id/curl-request.adoc[]
+include::{snippets}/product-controller-test/select-product-by-id/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/select-product-by-id/http-response.adoc[]
+include::{snippets}/product-controller-test/select-product-by-id/response-body.adoc[]
+
+
+[[Product-판매중상품]]
+=== Product 판매중상품
+
+실행
+include::{snippets}/product-controller-test/select-product-for-selling/curl-request.adoc[]
+include::{snippets}/product-controller-test/select-product-for-selling/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/select-product-for-selling/http-response.adoc[]
+include::{snippets}/product-controller-test/select-product-for-selling/response-body.adoc[]
+
+
+[[Product-관심상품등록및해제]]
+=== Product 관심상품등록및해제
+
+실행
+include::{snippets}/product-controller-test/update-wish/curl-request.adoc[]
+include::{snippets}/product-controller-test/update-wish/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/update-wish/http-response.adoc[]
+include::{snippets}/product-controller-test/update-wish/response-body.adoc[]
+
+
+[[Product-관심상품목록]]
+=== Product 관심상품목록
+
+실행
+include::{snippets}/product-controller-test/get-wish-list/curl-request.adoc[]
+include::{snippets}/product-controller-test/get-wish-list/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/get-wish-list/http-response.adoc[]
+include::{snippets}/product-controller-test/get-wish-list/response-body.adoc[]
+
+[[Product-상품끌어올리기]]
+=== Product 상품끌어올리기
+
+실행
+include::{snippets}/product-controller-test/reload/curl-request.adoc[]
+include::{snippets}/product-controller-test/reload/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/reload/http-response.adoc[]
+include::{snippets}/product-controller-test/reload/response-body.adoc[]
+
+[[Product-판매완료처리]]
+=== Product 판매완료처리
+
+실행
+include::{snippets}/product-controller-test/update-de-sold-for-product/curl-request.adoc[]
+include::{snippets}/product-controller-test/update-de-sold-for-product/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/update-de-sold-for-product/http-response.adoc[]
+include::{snippets}/product-controller-test/update-de-sold-for-product/response-body.adoc[]
+
+[[Product-상품숨김처리]]
+=== Product 상품숨김처리
+
+실행
+include::{snippets}/product-controller-test/update-hidden-for-product/curl-request.adoc[]
+include::{snippets}/product-controller-test/update-hidden-for-product/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/update-hidden-for-product/http-response.adoc[]
+include::{snippets}/product-controller-test/update-hidden-for-product/response-body.adoc[]
+
+[[Product-상품비활성화처리]]
+=== Product 상품비활성화처리
+
+실행
+include::{snippets}/product-controller-test/update-de-active-for-product/curl-request.adoc[]
+include::{snippets}/product-controller-test/update-de-active-for-product/http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/update-de-active-for-product/http-response.adoc[]
+include::{snippets}/product-controller-test/update-de-active-for-product/response-body.adoc[]
+
+[[Product-상품완전삭제]]
+=== Product 상품완전삭제
+
+실행
+include::{snippets}/product-controller-test/deleted-product/curl-request.adoc[]
+include::{snippets}/product-controller-test/deleted-product//http-request.adoc[]
+
+결과
+include::{snippets}/product-controller-test/deleted-product//http-response.adoc[]
+include::{snippets}/product-controller-test/deleted-product//response-body.adoc[]
+
+
